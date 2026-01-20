@@ -63,19 +63,18 @@ namespace Microsoft.McpGateway.Service.Tests
         }
 
         [TestMethod]
-        public async Task GetExistingSessionTargetAsync_WithMissingSessionId_ThrowsArgumentException()
+        public async Task GetExistingSessionTargetAsync_WithMissingSessionId_ReturnsNull()
         {
             var httpContext = new DefaultHttpContext();
             var cancellationToken = CancellationToken.None;
 
-            Func<Task> act = () => _handler.GetExistingSessionTargetAsync(httpContext, cancellationToken);
+            var result = await _handler.GetExistingSessionTargetAsync(httpContext, cancellationToken);
 
-            await act.Should().ThrowAsync<ArgumentException>()
-                .WithMessage("Session id not found in the request.");
+            result.Should().BeNull();
         }
 
         [TestMethod]
-        public async Task GetExistingSessionTargetAsync_WithInvalidSessionId_ThrowsArgumentException()
+        public async Task GetExistingSessionTargetAsync_WithInvalidSessionId_ReturnsNull()
         {
             var httpContext = new DefaultHttpContext();
             var sessionId = "invalid";
@@ -86,10 +85,9 @@ namespace Microsoft.McpGateway.Service.Tests
                 .Setup(x => x.TryGetAsync(sessionId, cancellationToken))
                 .ReturnsAsync((null, false));
 
-            Func<Task> act = () => _handler.GetExistingSessionTargetAsync(httpContext, cancellationToken);
+            var result = await _handler.GetExistingSessionTargetAsync(httpContext, cancellationToken);
 
-            await act.Should().ThrowAsync<ArgumentException>()
-                .WithMessage("Session id is not valid, or has expired.");
+            result.Should().BeNull();
         }
     }
 }

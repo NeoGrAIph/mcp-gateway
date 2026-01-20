@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.McpGateway.Management.Authorization;
 using Microsoft.McpGateway.Management.Store;
 using Microsoft.McpGateway.Service.Session;
+using System.Net;
 
 namespace Microsoft.McpGateway.Service.Controllers
 {
@@ -40,14 +41,22 @@ namespace Microsoft.McpGateway.Service.Controllers
             var sessionId = AdapterSessionRoutingHandler.GetSessionId(HttpContext);
             string? targetAddress;
             if (string.IsNullOrEmpty(sessionId))
-                targetAddress = await sessionRoutingHandler.GetNewSessionTargetAsync(name ?? ToolGateway, HttpContext, cancellationToken).ConfigureAwait(false);
-            else
-                targetAddress = await sessionRoutingHandler.GetExistingSessionTargetAsync(HttpContext, cancellationToken).ConfigureAwait(false);
-
-            if (targetAddress == null)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-                return;
+                targetAddress = await sessionRoutingHandler.GetNewSessionTargetAsync(name ?? ToolGateway, HttpContext, cancellationToken).ConfigureAwait(false);
+                if (targetAddress == null)
+                {
+                    HttpContext.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                    return;
+                }
+            }
+            else
+            {
+                targetAddress = await sessionRoutingHandler.GetExistingSessionTargetAsync(HttpContext, cancellationToken).ConfigureAwait(false);
+                if (targetAddress == null)
+                {
+                    HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
             }
 
             var proxiedRequest = HttpProxy.CreateProxiedHttpRequest(HttpContext, (uri) => ReplaceUriAddress(uri, targetAddress));
@@ -60,6 +69,10 @@ namespace Microsoft.McpGateway.Service.Controllers
                 sessionId = AdapterSessionRoutingHandler.GetSessionId(response);
                 if (!string.IsNullOrEmpty(sessionId))
                     await sessionStore.SetAsync(sessionId, targetAddress, cancellationToken).ConfigureAwait(false);
+            }
+            else if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                await sessionStore.RemoveAsync(sessionId, cancellationToken).ConfigureAwait(false);
             }
 
             await HttpProxy.CopyProxiedHttpResponseAsync(HttpContext, response, cancellationToken).ConfigureAwait(false);

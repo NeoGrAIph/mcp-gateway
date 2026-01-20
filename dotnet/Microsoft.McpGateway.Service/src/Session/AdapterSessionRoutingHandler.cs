@@ -28,14 +28,15 @@ namespace Microsoft.McpGateway.Service.Session
             var sessionId = GetSessionId(httpContext);
             if (string.IsNullOrEmpty(sessionId))
             {
-                throw new ArgumentException("Session id not found in the request.");
+                _logger.LogWarning("Missing session id for request {path}", httpContext.Request.Path.Sanitize());
+                return null;
             }
 
             var (targetAddress, exists) = await _sessionStore.TryGetAsync(sessionId, cancellationToken).ConfigureAwait(false);
             if (!exists || targetAddress == null)
             {
                 _logger.LogWarning("Cannot find session id for request {path}", httpContext.Request.Path.Sanitize());
-                throw new ArgumentException("Session id is not valid, or has expired.");
+                return null;
             }
             _logger.LogInformation("Existing session id {sessionId} found for request {path}", sessionId.Sanitize(), httpContext.Request.Path.Sanitize());
             return targetAddress!;
