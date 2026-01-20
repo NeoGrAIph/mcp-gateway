@@ -7,6 +7,7 @@ using Microsoft.McpGateway.Management.Authorization;
 using Microsoft.McpGateway.Management.Store;
 using Microsoft.McpGateway.Service.Session;
 using System.Net;
+using System.Text.Json;
 
 namespace Microsoft.McpGateway.Service.Controllers
 {
@@ -55,6 +56,14 @@ namespace Microsoft.McpGateway.Service.Controllers
                 if (targetAddress == null)
                 {
                     HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+                    HttpContext.Response.ContentType = "application/json";
+                    var payload = new
+                    {
+                        jsonrpc = "2.0",
+                        id = (object?)null,
+                        error = new { code = -32000, message = "Invalid or expired Mcp-Session-Id" }
+                    };
+                    await HttpContext.Response.WriteAsync(JsonSerializer.Serialize(payload), cancellationToken).ConfigureAwait(false);
                     return;
                 }
             }
