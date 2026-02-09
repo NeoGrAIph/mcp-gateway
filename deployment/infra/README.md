@@ -1,30 +1,30 @@
-# MCP Gateway Azure Deployment
+# Развертывание шлюза MCP в Azure
 
-This directory contains infrastructure-as-code templates and scripts for deploying the MCP Gateway to Azure.
+Этот каталог содержит шаблоны инфраструктуры как кода и сценарии для развертывания шлюза MCP в Azure.
 
-## Deployment Options
+## Варианты развертывания
 
-There are two ways to deploy the MCP Gateway infrastructure:
+Существует два способа развертывания инфраструктуры шлюза MCP:
 
-### Option 1: PowerShell Script (Recommended)
+### Вариант 1: сценарий PowerShell (рекомендуется)
 
-Use the PowerShell deployment script for better control and separation of concerns. This approach:
-- Deploys Azure infrastructure using Bicep
-- Separately configures Kubernetes resources
-- Provides better error handling and progress feedback
+Используйте сценарий развертывания PowerShell для лучшего контроля и разделения задач. Этот подход:
+- Развертывает инфраструктуру Azure с помощью Bicep.
+— Отдельно настраиваются ресурсы Kubernetes.
+- Обеспечивает лучшую обработку ошибок и обратную связь о ходе работы.
 
-**Prerequisites:**
-- Azure CLI installed and authenticated (`az login`)
-- PowerShell 5.1 or higher
-- Appropriate Azure permissions
+**Предварительные требования:**
+- Azure CLI установлен и прошел проверку подлинности (`az login`)
+- PowerShell 5.1 или выше.
+- Соответствующие разрешения Azure.
 
-**Basic Usage:**
+**Основное использование:**
 
 ```powershell
 .\Deploy-McpGateway.ps1 -ResourceGroupName "rg-mcpgateway-dev" -ClientId "<your-entra-client-id>"
 ```
 
-**Advanced Usage:**
+**Расширенное использование:**
 
 ```powershell
 # Deploy to a specific region with a custom resource label
@@ -41,19 +41,19 @@ Use the PowerShell deployment script for better control and separation of concer
     -EnablePrivateEndpoints
 ```
 
-**Parameters:**
+**Параметры:**
 
-| Parameter | Required | Description |
+| Параметр | Требуется | Описание |
 |-----------|----------|-------------|
-| `ResourceGroupName` | Yes | Name of the Azure resource group (created if doesn't exist) |
-| `ClientId` | Yes | Entra ID client ID for authentication |
-| `ResourceLabel` | No | Alphanumeric suffix for resource naming (3-30 chars). Defaults to resource group name |
-| `Location` | No | Azure region for deployment. Default: `westus3` |
-| `EnablePrivateEndpoints` | No | Switch to enable private endpoints for ACR and Cosmos DB |
+| @@КОД0@@ | Да | Имя группы ресурсов Azure (создается, если не существует) |
+| @@КОД0@@ | Да | Entra ID Идентификатор клиента для аутентификации |
+| @@КОД0@@ | Нет | Буквенно-цифровой суффикс имени ресурса (3–30 символов). По умолчанию имя группы ресурсов |
+| @@КОД0@@ | Нет | Регион Azure для развертывания. По умолчанию: `westus3` |
+| @@КОД0@@ | Нет | Переключитесь, чтобы включить частные конечные точки для ACR и Cosmos DB |
 
-### Option 2: Direct Bicep Deployment (Legacy)
+### Вариант 2: Прямое развертывание бицепса (устаревший вариант)
 
-Deploy directly using Bicep with the embedded deployment script:
+Выполните развертывание напрямую с помощью Bicep с помощью встроенного сценария развертывания:
 
 ```bash
 # Create resource group
@@ -67,7 +67,7 @@ az deployment group create \
   --parameters clientId=<your-entra-client-id>
 ```
 
-**With additional parameters:**
+**С дополнительными параметрами:**
 
 ```bash
 az deployment group create \
@@ -81,7 +81,7 @@ az deployment group create \
     enablePrivateEndpoints=true
 ```
 
-**Disable embedded Kubernetes deployment script:**
+**Отключить встроенный скрипт развертывания Kubernetes:**
 
 ```bash
 az deployment group create \
@@ -93,100 +93,100 @@ az deployment group create \
     enableKubernetesDeploymentScript=false
 ```
 
-## Deployed Resources
+## Развернутые ресурсы
 
-The deployment creates the following Azure resources:
+При развертывании создаются следующие ресурсы Azure:
 
-### Core Infrastructure
-- **Azure Kubernetes Service (AKS)**: Managed Kubernetes cluster
-  - 2-node cluster with D4ds_v5 VMs
-  - Azure RBAC enabled
-  - OIDC issuer and Workload Identity enabled
+### Основная инфраструктура
+- **Служба Azure Kubernetes (AKS)**: управляемый кластер Kubernetes.
+- 2-узловой кластер с виртуальными машинами D4ds_v5.
+- Azure RBAC включен.
+- Эмитент OIDC и идентификатор рабочей нагрузки включены.
   
-- **Azure Container Registry (ACR)**: Container image storage
-  - Standard SKU
-  - Integrated with AKS for image pull
+- **Реестр контейнеров Azure (ACR)**: хранилище образов контейнеров.
+- Стандартный артикул
+- Интегрирован с AKS для извлечения изображений.
 
-- **Azure Cosmos DB**: Document database for gateway state
-  - Session consistency level
-  - Three containers: AdapterContainer, CacheContainer, ToolContainer
-  - Optional private endpoint support
+- **Azure Cosmos DB**: база данных документов для состояния шлюза.
+- Уровень согласованности сеанса
+- Три контейнера: AdapterContainer, CacheContainer, ToolContainer.
+- Дополнительная поддержка частных конечных точек.
 
-### Networking
-- **Virtual Network (VNet)**: Network isolation
-  - 10.0.0.0/16 address space
-  - AKS subnet (10.0.1.0/24)
-  - Application Gateway subnet (10.0.2.0/24)
-  - Private endpoint subnet (10.0.3.0/24)
+### Сеть
+- **Виртуальная сеть (VNet)**: сетевая изоляция.
+- Адресное пространство 10.0.0.0/16
+- Подсеть AKS (10.0.1.0/24)
+- Подсеть шлюза приложений (10.0.2.0/24)
+- Подсеть частной конечной точки (10.0.3.0/24)
 
-- **Application Gateway**: Layer 7 load balancer
-  - Standard_v2 SKU
-  - HTTP frontend on port 80
-  - Health probe for backend monitoring
+- **Шлюз приложений**: балансировщик нагрузки уровня 7.
+- Стандарт_v2 SKU
+- HTTP-интерфейс на порту 80
+- Проверка работоспособности для серверного мониторинга.
 
-- **Public IP**: Static public IP with DNS label
+- **Публичный IP-адрес**: статический общедоступный IP-адрес с меткой DNS.
 
-### Identity & Access
-- **Managed Identities**:
-  - Gateway service identity (with Cosmos DB data contributor role)
-  - Admin identity (for AKS operations)
-  - Workload identity (for pod-level authentication)
+### Идентификация и доступ
+- **Управляемые удостоверения**:
+— Идентификатор службы шлюза (с ролью участника данных Cosmos DB).
+— Личность администратора (для операций AKS).
+- Идентификация рабочей нагрузки (для аутентификации на уровне модуля).
   
-- **Federated Credentials**: For Kubernetes service account integration
+- **Федеративные учетные данные**: для интеграции учетной записи службы Kubernetes.
 
-### Monitoring
-- **Application Insights**: Application monitoring and telemetry
+### Мониторинг
+- **Application Insights**: мониторинг приложений и телеметрия.
 
-## Networking Options
+## Параметры сети
 
-### Public Access (Default)
-Resources are accessible over the internet with proper authentication.
+### Публичный доступ (по умолчанию)
+Ресурсы доступны через Интернет с надлежащей аутентификацией.
 
-### Private Endpoints
-Enable with `-EnablePrivateEndpoints` flag:
-- ACR and Cosmos DB accessible only within VNet
-- Private DNS zones automatically configured
-- Ideal for production environments requiring network isolation
+### Частные конечные точки
+Включить флагом `-EnablePrivateEndpoints`:
+— ACR и Cosmos DB доступны только внутри виртуальной сети.
+- Частные зоны DNS настраиваются автоматически.
+- Идеально подходит для производственных сред, требующих сетевой изоляции.
 
-## Post-Deployment
+## После развертывания
 
-After successful deployment:
+После успешного развертывания:
 
-1. **Access the Gateway**: Use the FQDN from the deployment output
+1. **Доступ к шлюзу**: используйте полное доменное имя из выходных данных развертывания.
    ```
    http://<public-ip-dns-label>.<region>.cloudapp.azure.com
    ```
 
-2. **Verify Kubernetes Pods**:
+2. **Проверьте модули Kubernetes**:
    ```bash
    kubectl get pods -n adapter
    ```
 
-3. **Check Gateway Logs**:
+3. **Проверьте журналы шлюза**:
    ```bash
    kubectl logs -n adapter -l app=mcpgateway-service
    ```
 
-## Troubleshooting
+## Поиск неисправностей
 
-### PowerShell Script Issues
+### Проблемы со скриптами PowerShell
 
-**Prerequisites not met:**
-- Ensure Azure CLI is installed: `az --version`
-- Login to Azure: `az login`
+**Не выполнены необходимые условия:**
+- Убедитесь, что установлен Azure CLI: `az --version`.
+- Войдите в Azure: `az login`.
 
-**Deployment failures:**
-- Check Azure CLI output for specific errors
-- Verify you have appropriate permissions in the subscription
-- Ensure the resource label is unique and meets naming requirements
+**Ошибки развертывания:**
+- Проверьте выходные данные Azure CLI на наличие конкретных ошибок.
+- Убедитесь, что у вас есть соответствующие разрешения в подписке.
+– Убедитесь, что метка ресурса уникальна и соответствует требованиям к именованию.
 
-**Kubernetes deployment issues:**
-- Verify AKS cluster is running: `az aks show -g <rg-name> -n <aks-name>`
-- Review pod status: `az aks command invoke -g <rg-name> -n <aks-name> --command "kubectl get pods -A"`
+**Проблемы с развертыванием Kubernetes:**
+- Убедитесь, что кластер AKS работает: `az aks show -g <rg-name> -n <aks-name>`.
+- Проверить статус модуля: `az aks command invoke -g <rg-name> -n <aks-name> --command "kubectl get pods -A"`.
 
-### Bicep Deployment Issues
+### Проблемы с использованием бицепса
 
-**Template validation errors:**
+**Ошибки проверки шаблона:**
 ```bash
 az deployment group validate \
   --resource-group <rg-name> \
@@ -194,32 +194,32 @@ az deployment group validate \
   --parameters clientId=<your-client-id>
 ```
 
-**Deployment script failures:**
-- Check deployment script logs in Azure Portal
-- Verify managed identity has appropriate permissions
-- Review AKS cluster accessibility
+**Ошибки сценария развертывания:**
+— Проверьте журналы сценариев развертывания на портале Azure.
+- Убедитесь, что управляемое удостоверение имеет соответствующие разрешения.
+- Проверка доступности кластера AKS.
 
-## Cleanup
+## Очистка
 
-To remove all deployed resources:
+Чтобы удалить все развернутые ресурсы:
 
 ```powershell
 # Delete the entire resource group
 az group delete --name rg-mcpgateway-dev --yes --no-wait
 ```
 
-## Migration from Embedded Script to PowerShell
+## Миграция со встроенного скрипта на PowerShell
 
-If you previously deployed using the embedded Bicep deployment script:
+Если вы ранее выполняли развертывание с помощью встроенного сценария развертывания Bicep:
 
-1. The Bicep template now supports both methods via the `enableKubernetesDeploymentScript` parameter
-2. To update an existing deployment without the embedded script:
+1. Шаблон Bicep теперь поддерживает оба метода через параметр `enableKubernetesDeploymentScript`.
+2. Чтобы обновить существующее развертывание без встроенного сценария:
    ```powershell
    .\Deploy-McpGateway.ps1 -ResourceGroupName <existing-rg> -ClientId <client-id>
    ```
-3. The PowerShell script will update the infrastructure and reconfigure Kubernetes resources
+3. Скрипт PowerShell обновит инфраструктуру и перенастроит ресурсы Kubernetes.
 
-## Architecture
+## Архитектура
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -252,17 +252,17 @@ If you previously deployed using the embedded Bicep deployment script:
 └────────────────┘              └─────────────────┘
 ```
 
-## Security Considerations
+## Вопросы безопасности
 
-- **Authentication**: Uses Entra ID (Azure AD) for authentication
-- **Authorization**: Azure RBAC for AKS, Cosmos DB RBAC for data access
-- **Network Isolation**: Optional private endpoints for enhanced security
-- **Identity**: Workload Identity for pod-level authentication (no secrets needed)
-- **Secrets**: Managed identities eliminate need for storing credentials
+- **Аутентификация**: для аутентификации используется Entra ID (Azure AD).
+- **Авторизация**: Azure RBAC для AKS, Cosmos DB RBAC для доступа к данным.
+- **Сетевая изоляция**: дополнительные частные конечные точки для повышения безопасности.
+- **Идентификация**: Идентификатор рабочей нагрузки для аутентификации на уровне модуля (секреты не требуются).
+- **Секреты**: управляемые удостоверения устраняют необходимость хранения учетных данных.
 
-## Additional Resources
+## Дополнительные ресурсы
 
-- [Azure Kubernetes Service Documentation](https://docs.microsoft.com/azure/aks/)
-- [Azure Container Registry Documentation](https://docs.microsoft.com/azure/container-registry/)
-- [Azure Cosmos DB Documentation](https://docs.microsoft.com/azure/cosmos-db/)
-- [Bicep Documentation](https://docs.microsoft.com/azure/azure-resource-manager/bicep/)
+- [Документация по службе Azure Kubernetes](https://docs.microsoft.com/azure/aks/)
+- [Документация по реестру контейнеров Azure](https://docs.microsoft.com/azure/container-registry/)
+- [Документация по Azure Cosmos DB](https://docs.microsoft.com/azure/cosmos-db/)
+- [Документация по бицепсу](https://docs.microsoft.com/azure/azure-resource-manager/bicep/)

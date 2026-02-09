@@ -1,29 +1,29 @@
-# Azure Entra ID Application Roles Setup
+# Настройка ролей приложения Azure Entra ID
 
-Follow these steps to enable application roles, assign them to identities, and pass the role value into adapter/tool definitions for authorization.
+Выполните следующие действия, чтобы включить роли приложения, назначить их удостоверениям и передать значение роли в определения адаптера/инструмента для авторизации.
 
-## 1. Enable and Configure Roles on the App Registration
-- Open the Azure portal and navigate to **Entra ID > App registrations**; select the app the gateway trusts (e.g., `McpGateway`).
-- Go to **App roles** and choose **Create app role**.
-  - **Display name**: Friendly label shown in the portal (e.g., `Adapter Reader`).
-  - **Allowed member type**: `Users/Groups` for people or `Applications` for service principals.
-  - **Value**: Immutable string used by Mcp Gateway authorization (e.g., `mcp.engineer`).
-  - Provide a meaningful description so administrators know when to grant it.
-  - Save the role. Repeat for each logical permission your org needs; you can create any value pattern (e.g., `mcp.engineer`, `mcp.scientist`).
-- **Always create the admin role** with the value `mcp.admin`. This value is used by the gateway to grant elevated write access beyond the resource creator.
-- Make sure **App roles** shows the new entries in the table; this automatically updates the app manifest.
+## 1. Включение и настройка ролей при регистрации приложения
+- Откройте портал Azure и перейдите к **Entra ID > Регистрации приложений**; выберите приложение, которому доверяет шлюз (например, `McpGateway`).
+– Перейдите в раздел **Роли приложения** и выберите **Создать роль приложения**.
+- **Отображаемое имя**: понятная метка, отображаемая на портале (например, `Adapter Reader`).
+- **Разрешенный тип участника**: `Users/Groups` для людей или `Applications` для субъектов-служб.
+- **Значение**: неизменяемая строка, используемая при авторизации шлюза Mcp (например, `mcp.engineer`).
+– Предоставьте осмысленное описание, чтобы администраторы знали, когда его предоставить.
+- Сохраните роль. Повторите эти действия для каждого логического разрешения, необходимого вашей организации; вы можете создать любой шаблон значений (например, `mcp.engineer`, `mcp.scientist`).
+- **Всегда создавайте роль администратора** со значением `mcp.admin`. Это значение используется шлюзом для предоставления повышенного доступа на запись за пределами создателя ресурса.
+– Убедитесь, что в разделе **Роли приложений** отображаются новые записи в таблице; это автоматически обновляет манифест приложения.
 
-## 2. Assign Roles to Identities
-- In the same app registration, open **Enterprise applications** (service principal) entry.
-- Navigate to **Users and groups > Add user/group**.
-  - Select a user, group, or service principal.
-  - Choose the desired application role value.
-  - Confirm the assignment.
-- Users receive the role via their next sign-in; apps inherit the claims immediately once the service principal is updated.
+## 2. Назначьте роли удостоверениям
+- При той же регистрации приложения откройте запись **Корпоративные приложения** (субъект-служба).
+– Перейдите в раздел **Пользователи и группы > Добавить пользователя/группу**.
+- Выберите пользователя, группу или субъекта-службы.
+- Выберите желаемое значение роли приложения.
+- Подтвердите задание.
+- Пользователи получают роль при следующем входе в систему; приложения наследуют утверждения сразу после обновления субъекта-службы.
 
-## 3. Provide the Role Value When Creating Adapters or Tools
-- When calling the management APIs (or CLI) to create adapters/tools, populate the `requiredRoles` collection with the exact **Value** strings created above.
-- Example payload fragment:
+## 3. Укажите значение роли при создании адаптеров или инструментов
+- При вызове API управления (или CLI) для создания адаптеров/инструментов заполняйте коллекцию `requiredRoles` точными строками **Value**, созданными выше.
+- Пример фрагмента полезной нагрузки:
   ```json
   {
     "name": "sample-adapter",
@@ -31,8 +31,8 @@ Follow these steps to enable application roles, assign them to identities, and p
     "requiredRoles": ["mcp.engineer", "mcp.scientist"]
   }
   ```
-- The gateway’s `SimplePermissionProvider` grants:
-  - **Read** access if the caller is the creator, holds `mcp.admin`, or matches one of the `requiredRoles` entries.
-  - **Write** access if the caller is the creator or holds `mcp.admin`.
+- `SimplePermissionProvider` шлюза предоставляет:
+- Доступ **Чтение**, если вызывающий абонент является создателем, имеет `mcp.admin` или соответствует одной из записей `requiredRoles`.
+- Доступ **Запись**, если вызывающий абонент является создателем или имеет `mcp.admin`.
 
-  > If no `requiredRoles` is configured, it by default ALLOW ALL READ access.
+> Если `requiredRoles` не настроен, по умолчанию РАЗРЕШЕН ВСЕМ доступ на ЧТЕНИЕ.

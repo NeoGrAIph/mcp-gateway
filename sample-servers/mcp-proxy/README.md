@@ -1,52 +1,52 @@
-# Proxying Local & Remote MCP Servers
+# Проксирование локальных и удаленных серверов MCP
 
-## What’s New
+## Что нового
 
-### Proxying Local Stdio MCP Server
-- Spin up local MCP servers behind the gateway by specifying a command (`npx`, `uvx`, etc.).  
-- Expose them remotely via HTTP/Streamable so cloud agents can connect.  
-- Support workload identity for secure authentication with Azure resources.  
+### Проксирование локального сервера Stdio MCP
+- Раскрутите локальные серверы MCP за шлюзом, указав команду (`npx`, `uvx` и т. д.).
+- Предоставляйте им доступ удаленно через HTTP/Streamable, чтобы облачные агенты могли подключиться.
+— Поддержка удостоверений рабочей нагрузки для безопасной аутентификации с помощью ресурсов Azure.
 
-With this, you can transform **local-only MCP servers** into **cloud-accessible services** that plug directly into your AI workflows.
+Благодаря этому вы можете превратить **локальные серверы MCP** в **доступные из облака сервисы**, которые напрямую подключаются к вашим рабочим процессам ИИ.
 
-### Proxying Remote HTTP MCP Server
-- Forward requests from the gateway to an existing MCP server over Streamable HTTP.    
+### Проксирование удаленного HTTP MCP-сервера
+- Пересылать запросы от шлюза на существующий сервер MCP через потоковый HTTP.
 
 
-## Instructions
+## Инструкции
 
-### Preparation
+### Подготовка
 
-- Make sure the cloud deployment has been done.
-- Build the MCP proxy server image in ACR.
+- Убедитесь, что развертывание облака выполнено.
+- Создайте образ прокси-сервера MCP в ACR.
   ```sh
   az acr build -r "mgreg$resourceLabel" -f sample-servers/mcp-proxy/Dockerfile sample-servers/mcp-proxy -t "mgreg$resourceLabel.azurecr.io/mcp-proxy:1.0.0"
   ```
 
-- Configure permissions for the workload identity principal (If setting up a local mcp server)
-`mg-identity-<identifier>-workload`. 
-This identity is created by deployment. The MCP server will use the workload identity for upstream resource access.
+- Настройка разрешений для субъекта идентификации рабочей нагрузки (при настройке локального сервера mcp).
+`mg-identity-<identifier>-workload`.
+Это удостоверение создается путем развертывания. Сервер MCP будет использовать идентификатор рабочей нагрузки для доступа к восходящим ресурсам.
 
-### Proxying Local Servers
-For starting a local MCP server in stdio and proxying the traffic through gateway to it.
-Set server startup command and arguments in environment variables:
-  - `MCP_COMMAND`
-  - `MCP_ARGS`
+### Проксирование локальных серверов
+Для запуска локального сервера MCP в stdio и проксирования трафика через шлюз к нему.
+Задайте команду запуска сервера и аргументы в переменных среды:
+- `MCP_COMMAND`
+- `MCP_ARGS`
 
-Set `useWorkloadIdentity` to be true if need the server to use the workload identity.
+Установите для `useWorkloadIdentity` значение true, если серверу необходимо использовать удостоверение рабочей нагрузки.
 
-  > **Note:** When using a bridged local server, certain system packages may be missing by default. To address this, you can install the required packages within a custom Dockerfile and build your own `mcp-proxy` image.
+> **Примечание.** При использовании локального сервера с мостовым соединением некоторые системные пакеты могут отсутствовать по умолчанию. Чтобы решить эту проблему, вы можете установить необходимые пакеты в собственный файл Dockerfile и создать собственный образ `mcp-proxy`.
 
-### Proxying Remote Servers
-For proxying another internal mcp server hosted in streamable HTTP. Set the target endpoint in environment variable
-  - `MCP_PROXY_URL`
+### Проксирование удаленных серверов
+Для проксирования другого внутреннего сервера mcp, размещенного в потоковом режиме HTTP. Установите целевую конечную точку в переменной среды
+- `MCP_PROXY_URL`
 
 
-## Examples
+## Примеры
 
-Example payloads to send to `mcp-gateway` using the `POST /adapters` endpoint to launch a mcp server remotely. 
+Пример полезных данных для отправки на `mcp-gateway` с использованием конечной точки `POST /adapters` для удаленного запуска сервера mcp.
 
-#### Example 1: Bridged [Azure MCP Server](https://github.com/microsoft/mcp/tree/main/servers/Azure.Mcp.Server)
+#### Пример 1: мостовой [сервер Azure MCP](https://github.com/microsoft/mcp/tree/main/servers/Azure.Mcp.Server)
 ```json
 {
   "name": "azure-remote",
@@ -62,7 +62,7 @@ Example payloads to send to `mcp-gateway` using the `POST /adapters` endpoint to
 }
 ```
 
-#### Example 2: Bridged [Azure AI Foundry MCP Server](https://github.com/azure-ai-foundry/mcp-foundry)
+#### Пример 2: Мостовое соединение [Azure AI Foundry MCP Server](https://github.com/azure-ai-foundry/mcp-foundry)
 ```json
 {
   "name": "foundry-remote",
@@ -77,7 +77,7 @@ Example payloads to send to `mcp-gateway` using the `POST /adapters` endpoint to
 }
 ```
 
-#### Example 3: Bridged [Azure DevOps MCP Server](https://github.com/microsoft/azure-devops-mcp)
+#### Пример 3: Мостовой [сервер Azure DevOps MCP](https://github.com/microsoft/azure-devops-mcp)
 ```json
 {
     "name": "ado-remote",
@@ -94,12 +94,12 @@ Example payloads to send to `mcp-gateway` using the `POST /adapters` endpoint to
 }
 ```
 
-> **Note:** Different MCP servers have different conventions for reading credentials from the environment for setting up `TokenCredential` and connect to upstream resources. You may need to adjust the environment variable names/values per server.<br>
-Examples:
-Some servers expect a general switch like `AZURE_TOKEN_CREDENTIALS=WorkloadIdentityCredential`
-Others use service-specific variables (e.g., `ADO_MCP_AZURE_TOKEN_CREDENTIALS`)
+> **Примечание.** Разные серверы MCP используют разные правила чтения учетных данных из среды для настройки `TokenCredential` и подключения к вышестоящим ресурсам. Возможно, вам придется изменить имена/значения переменных среды для каждого сервера.<br>
+Примеры:
+Некоторые серверы ожидают общего переключения, например `AZURE_TOKEN_CREDENTIALS=WorkloadIdentityCredential`.
+Другие используют переменные, специфичные для службы (например, `ADO_MCP_AZURE_TOKEN_CREDENTIALS`).
 
-#### Example 4: Proxied Internal MCP Server (Streamable HTTP)
+#### Пример 4: Внутренний прокси-сервер MCP (потоковый HTTP)
 ```json
 {
     "name": "internal-mcp",
@@ -112,8 +112,8 @@ Others use service-specific variables (e.g., `ADO_MCP_AZURE_TOKEN_CREDENTIALS`)
 }
 ```
 
-## Security Considerations
+## Вопросы безопасности
 
-Before running in production
-- Implement appropriate access controls on the gateway level to prevent users from exploiting the workload identity access through it.
-- Always only register trusted MCP servers, enable network access policies on the server pods.
+Перед запуском в производство
+- Внедрите соответствующие средства управления доступом на уровне шлюза, чтобы пользователи не могли использовать доступ к удостоверениям рабочей нагрузки через него.
+- Всегда регистрируйте только доверенные серверы MCP, включайте политики доступа к сети на модулях серверов.
